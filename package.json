@@ -28,6 +28,6 @@
     "socket.io": "^1.7.2",
     "youtube-audio-stream": "0.0.32",
     "youtube-info": "^1.1.1",
-    "ytdl-core": "^0.7.22"
+    "ytdl-core": "^0.7.24"
   }
 }
