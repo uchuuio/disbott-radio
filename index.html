@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <title>discord radio</title>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.3.1/css/bulma.min.css" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+        <style>
+            .notification {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 10;
+            }
+
+            .request-form {
+                background: rgba(0, 0, 0, 0.6);
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                padding: 15px;
+                width: 100%;
+            }
+
+            .song .media {
+                overflow: auto;
+            }
+
+            .description {
+                display: inline-block;
+                overflow: auto;
+                height: 75px;
+                width: 100%;
+            }
+
+            .icon.is-small {
+                width: auto;
+            }
+
+            video {
+                display: block;
+                height: 32px;
+                width: 100px;
+                max-width: inherit;
+            }
+
+            .song:first-child {
+                background: #23d160;
+                color: #fff;
+            }
+                .song:first-child a,
+                .song:first-child strong,
+                .song:first-child .content {
+                    color: #fff;
+                }
+        </style>
+    </head>
+    <body>
+        <div class="notification is-success" style="display: none;">
+            <button class="delete" onclick="hideNotification()"></button>
+        </div>
+
+        <div class="container">
+            <div id="playlist"></div>
+                
+            <form action="" class="request-form">
+                <div class="control is-grouped">
+                    <!--<p class="control">
+                        <video controls="" autoplay="" name="media"><source src="http://localhost:3000/stream" type="audio/mpeg"></video>
+                    </p>-->
+                    <p class="control is-expanded">
+                        <input id="url" name="url" autocomplete="off" class="input" type="text" placeholder="url...">
+                    </p>
+                    <p class="control">
+                        <button class="button is-primary">Request</button>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </body>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script>
+        var socket = io();
+        $('form').submit(function() {
+            var url = $('#url');
+            if (url.val() !== '') {
+                socket.emit('requestSong', url.val());
+                url.val('');
+            }
+            return false;
+        });
+
+        function hideNotification() {
+            $('.notification').fadeOut();
+            $('.notification').html('<button class="delete" onclick="hideNotification()"></button>');
+        }
+
+        function showNotification(title) {
+            var notification = $('.notification.is-success');
+            notification.append(`Added ${title} to playlist`);
+            notification.fadeIn('slow');
+            setTimeout(function() {
+                hideNotification();
+            }, 3000);
+        }
+
+        function addSongToList(song) {
+            var songHtml = `
+                <div class="box song" data-song="${song._id}">
+                    <article class="media">
+                        <div class="media-left">
+                            <figure class="image is-128x128">
+                                <a href="${song.url}" title="${song.title}" target="_blank">
+                                    <img src="${song.thumbnailUrl}" alt="${song.title}">
+                                </a>
+                            </figure>
+                        </div>
+                        <div class="media-content">
+                            <div class="content">
+                                <p>
+                                    <strong>${song.title}</strong> <small>${song.owner}</small>
+                                    <br>
+                                    <span class="description">${song.description}</span>
+                                </p>
+                            </div>
+                            <nav class="level">
+                                <div class="level-left">
+                                <p class="level-item" title="published on..">
+                                    <span class="icon is-small"><i class="fa fa-calendar-o"></i> ${song.datePublished}</span>
+                                </p>
+                                <p class="level-item" title="lasts for...">
+                                    <span class="icon is-small"><i class="fa fa-clock-o"></i> ${song.prettyDuration}</span>
+                                </p>
+                                <p class="level-item" title="been viewed...">
+                                    <span class="icon is-small"><i class="fa fa-eye"></i> ${song.views}</span>
+                                </p>
+                                </div>
+                            </nav>
+                        </div>
+                    </article>
+                </div>
+            `;
+            $('#playlist').append(songHtml);
+        }
+
+        // Same as below without the notification
+        socket.on('joinedSongs', function(songs) {
+            $('#playlist .song').remove();
+            songs.reverse();
+            songs.forEach(function(song) {
+                addSongToList(song);
+            })
+        })
+
+        socket.on('addedSong', function(song) {
+            showNotification(song.title);
+            addSongToList(song);
+        });
+
+        socket.on('removeSong', function(id) {
+            $('.song[data-song='+id+']').remove();
+        })
+    </script>
+</html>

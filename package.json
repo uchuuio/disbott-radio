@@ -1,0 +1,33 @@
+{
+  "name": "disbott-radio",
+  "author": "tomo@uchuu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "deploy": "now --docker; now alias"
+  },
+  "now": {
+    "alias": "radio.uchuu.io"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "discordie": "^0.11.0",
+    "dotenv": "^4.0.0",
+    "dotenv-safe": "^4.0.3",
+    "es6-promise": "^4.0.5",
+    "express": "^4.14.0",
+    "get-youtube-id": "^1.0.0",
+    "isomorphic-fetch": "^2.2.1",
+    "moment": "^2.17.1",
+    "moment-duration-format": "^1.3.0",
+    "nedb": "^1.8.0",
+    "now-logs": "0.0.7",
+    "socket.io": "^1.7.2",
+    "youtube-audio-stream": "0.0.32",
+    "youtube-info": "^1.1.1",
+    "ytdl-core": "^0.7.22"
+  }
+}
