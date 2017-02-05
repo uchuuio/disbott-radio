@@ -1,13 +1,20 @@
-require('dotenv-safe').load();
+var dotenv = require('dotenv');
+dotenv.config();
 
-require('now-logs')(process.env.NOW_LOGS_KEY);
+if (typeof process.env.NOW_LOGS_KEY !== "undefined") {
+    require('now-logs')(process.env.NOW_LOGS_KEY);
+}
+
+var fs = require('fs');
 
 var Datastore = require('nedb');
 var db = new Datastore({ filename: './db/songs.db', autoload: true });
 
 var express = require('express');
 var server = express();
-server.use('/songs', express.static(process.env.SONGS_FOLDER));
+var bodyParser = require('body-parser');
+server.use('/songs', express.static('./songs/'));
+server.use(bodyParser.urlencoded({ extended: true }));
 var http = require('http').Server(server);
 var io = require('socket.io')(http);
 
@@ -68,9 +75,24 @@ function playSongBot(voiceChannels, song) {
     });
 }
 
-server.get('/', function (req, res) {
+server.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
+
+server.get('/setup', function(req, res) {
+    res.sendFile(__dirname + '/setup.html');
+});
+
+server.post('/setup', function(req, res) {
+    Object.keys(req.body).forEach(function(key) {
+        fs.appendFileSync('./.env', "\r\n"+key.toUpperCase()+'='+req.body[key])
+    });
+    setTimeout(function() {
+        dotenv.config();
+        bot.connect({ token: process.env.DISCORD_TOKEN });
+        res.redirect('/');
+    }, 1000);
+})
 
 io.on('connection', function(socket) {
     db.find({}, function (err, songs) {

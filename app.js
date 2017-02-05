@@ -1,4 +1,4 @@
-require('dotenv-safe').load();
+require('dotenv').config()
 
 const fs = require('fs');
 const mm = require('musicmetadata');
@@ -13,14 +13,14 @@ var ytdl = require('ytdl-core');
 
 function getRandLocalSong(db) {
     return new Promise(function(resolve, reject) {
-        let files = fs.readdirSync(process.env.SONGS_FOLDER);
+        let files = fs.readdirSync('./songs/');
         files = files.filter(function(item) { 
             return item != '.DS_Store';
         });
 
         if (files.length > 0) {
             const chosenSong = files[Math.floor(Math.random() * files.length)];
-            mm(fs.createReadStream(process.env.SONGS_FOLDER + chosenSong), function (err, metadata) {
+            mm(fs.createReadStream('./songs/' + chosenSong), function (err, metadata) {
                 if (err) throw err;
                 let song = {};
                 if (chosenSong === 'bgm.mp3') {
@@ -28,7 +28,7 @@ function getRandLocalSong(db) {
                         title: 'BGM',
                         owner: 'Disbott',
                         url: process.env.WEBSITE + '/songs/' + chosenSong,
-                        audioUrl: process.env.SONGS_FOLDER + chosenSong,
+                        audioUrl: './songs/' + chosenSong,
                         medium: 'local'
                     };
                 } else {
@@ -40,7 +40,7 @@ function getRandLocalSong(db) {
                         owner: metadata.artist[0],
                         prettyDuration: prettyDuration,
                         url: process.env.WEBSITE + '/songs/' + chosenSong,
-                        audioUrl: process.env.SONGS_FOLDER + chosenSong,
+                        audioUrl: './songs/' + chosenSong,
                         medium: 'local'
                     };
                 }

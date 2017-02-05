@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <title>discord radio</title>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.3.1/css/bulma.min.css" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+    </head>
+    <body>
+        <div class="notification is-success" style="display: none;">
+            <button class="delete" onclick="hideNotification()"></button>
+        </div>
+
+        <div class="container">
+            <form method="POST" action="" class="form">
+                <h1 class="title is-1">Setup your own Disbott-Radio</h1>
+                <label class="label">Bot Token</label>
+                <p class="control">
+                    <input name="discord_token" class="input" type="text" placeholder="token">
+                </p>
+                <label class="label">Text Channel</label>
+                <p class="control">
+                    <input name="radio_text_channel" class="input" type="text" placeholder="radio">
+                </p>
+                <label class="label">Voice Channel</label>
+                <p class="control">
+                    <input name="radio_voice_channel" class="input" type="text" placeholder="radio">
+                </p>
+                <label class="label">Website</label>
+                <p class="control">
+                    <input name="website" class="input" type="text" placeholder="http://radio.uchuu.io">
+                </p>
+                <p class="control">
+                    <button class="button is-primary">Submit</button>
+                </p>
+            </form>
+        </div>
+    </body>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script>
+        var socket = io();
+        $('form').submit(function() {
+            var url = $('#url');
+            if (url.val() !== '') {
+                socket.emit('requestSong', url.val());
+                url.val('');
+            }
+            return false;
+        });
+    </script>
+</html>
