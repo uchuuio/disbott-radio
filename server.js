@@ -3,23 +3,26 @@ require('dotenv-safe').load();
 require('now-logs')(process.env.NOW_LOGS_KEY);
 
 var Datastore = require('nedb');
-var db = new Datastore();
+var db = new Datastore({ filename: './db/songs.db', autoload: true });
 
-var server = require('express')();
+var express = require('express');
+var server = express();
+server.use('/songs', express.static(process.env.SONGS_FOLDER));
 var http = require('http').Server(server);
 var io = require('socket.io')(http);
 
 var Discordie = require("discordie");
 var bot = new Discordie({ autoReconnect: true });
 
-var ytdl = require('ytdl-core');
-
 var app = require('./app.js');
 
+var currentSong = {};
 var isPlaying = false;
+var stoppedCount = 0;
 function playSongBot(voiceChannels, song) {
     function nextSong() {
         isPlaying = false;
+        stoppedCount = 0;
         bot.User.setGame({
             name: '',
         });
@@ -33,43 +36,36 @@ function playSongBot(voiceChannels, song) {
                             playSongBot(voiceChannels, song);
                         }
                     });
-            })
+            });
     }
 
-    function onMediaInfo(err, mediaInfo) {
-        if (err) return console.log("ytdl error:", err);
-        // sort by bitrate, high to low; prefer webm over anything else
-        var formats = mediaInfo.formats.filter(f => f.container === "webm").sort((a, b) => b.audioBitrate - a.audioBitrate);
+    currentSong = song;
 
-        // get first audio-only format or fallback to non-dash video
-        var bestaudio = formats.find(f => f.audioBitrate > 0 && !f.bitrate) || formats.find(f => f.audioBitrate > 0);
-        if (!bestaudio) return console.log("[playRemote] No valid formats");
+    voiceChannels.forEach(function(voiceChannel) {
+        var encoder = voiceChannel.voiceConnection.createExternalEncoder({
+            type: "ffmpeg",
+            source: song.audioUrl,
+            outputArgs: ["-af", "volume=0.30"],
+        });
 
-        voiceChannels.forEach(function(voiceChannel) {
-            var encoder = voiceChannel.voiceConnection.createExternalEncoder({
-                type: "ffmpeg",
-                source: bestaudio.url,
-                outputArgs: ["-af", "volume=0.30"],
-            });
-            encoder.once("end", function() {
-                // Remove song
+        encoder.once("end", function() {
+            // Remove song
+            stoppedCount++;
+            if (stoppedCount === voiceChannels.length) {
                 nextSong();
-            });
+            }
+        });
 
-            bot.User.setGame({
-                name: song.title,
-            });
+        bot.User.setGame({
+            name: song.title + ' -- ' + song.owner,
+        });
 
-            isPlaying = true;
-            var encoderStream = encoder.play();
-            encoderStream.resetTimestamp();
-            encoderStream.removeAllListeners("timestamp");
-            // encoderStream.on("timestamp", time => console.log("Time " + time));
-        })
-    }
-    try {
-        ytdl.getInfo(song.url, onMediaInfo);
-    } catch (e) { console.log("ytdl threw:", e); }
+        var encoderStream = encoder.play();
+        isPlaying = true;
+        encoderStream.resetTimestamp();
+        encoderStream.removeAllListeners("timestamp");
+        // encoderStream.on("timestamp", time => console.log("Time " + time));
+    });
 }
 
 server.get('/', function (req, res) {
@@ -111,7 +107,7 @@ bot.Dispatcher.on("GATEWAY_READY", e => {
 
     // Join Radio
     bot.Guilds.forEach(function(guild) {
-        channel = guild.voiceChannels.find(c => c.name == "radio");
+        channel = guild.voiceChannels.find(c => c.name == process.env.RADIO_VOICE_CHANNEL);
         channel.join(false, false);
     })
 });
@@ -119,12 +115,26 @@ bot.Dispatcher.on("GATEWAY_READY", e => {
 bot.Dispatcher.on("MESSAGE_CREATE", e => {
     var wasMentioned = bot.User.isMentioned(e.message);
     var isNotBot = (e.message.author.id !== bot.User.id);
-    var isRadioChannel = (e.message.channel.name === 'radio');
+    var isRadioChannel = (e.message.channel.name === process.env.RADIO_TEXT_CHANNEL);
 
     if (wasMentioned && isNotBot && isRadioChannel) {
         var splitMessage = e.message.content.split(' ');
         var command = splitMessage[1];
         var url = splitMessage[2];
+
+        if (command == "start") {
+            db.remove({}, { multi: true }, function (err, numRemoved) {
+                app.getNextSong(db)
+                    .then(function(song) {
+                        if (typeof song !== "undefined") {
+                            var voiceChannels = bot.VoiceConnections;
+                            if (!voiceChannels[0]) return console.log("Voice not connected");
+                            playSongBot(voiceChannels, song);
+                        }
+                    });
+            });
+        }
+
         if (command == "request" || command == "play") {
             app.addUrl(url, db)
                 .then(function(song) {
@@ -132,52 +142,53 @@ bot.Dispatcher.on("MESSAGE_CREATE", e => {
                     io.emit('addedSong', song);
 
                     bot.Guilds.forEach(function(guild) {
-                        channel = guild.textChannels.find(c => c.name == "radio");
+                        channel = guild.textChannels.find(c => c.name == process.env.RADIO_TEXT_CHANNEL);
                         channel.sendMessage(song.title + ' has been queued');
                     });
 
                     db.find({}, function (err, songs) {
                         if (songs.length <= 1 || !isPlaying) {
-                            var info = bot.VoiceConnections[0];
-                            if (!info) return console.log("Voice not connected");
-                            playSongBot(info, song);
+                            var voiceChannels = bot.VoiceConnections;
+                            if (!voiceChannels[0]) return console.log("Voice not connected");
+                            playSongBot(voiceChannels, song);
                         }
                     });
                 });
         }
+
+        if (command == "current") {
+            e.message.channel.sendMessage('**Currently Playing:** ' + currentSong.title + ' -- ' + currentSong.owner);
+        }
+
+        if (command == "skip") {
+            // Stop Current Song and go to next
+            app.stopPlaying(bot);
+            app.removeCurrentSong(db, currentSong._id)
+                .then(function(_id) {
+                    io.emit('removeSong', _id);
+
+                    app.getNextSong(db)
+                        .then(function(song) {
+                            if (typeof song !== "undefined") {
+                                io.emit('addedSong', song);
+                                var voiceChannels = bot.VoiceConnections;
+                                if (!voiceChannels[0]) return console.log("Voice not connected");
+                                playSongBot(voiceChannels, song);
+                            }
+                        });
+                });
+        }
+
         if (command == "playlist") {
             e.message.channel.sendMessage('Visit '+process.env.WEBSITE+' to see the full playlist');
         }
+
+        if (command == "stop") {
+            app.stopPlaying(bot);
+            e.message.channel.sendMessage('Stopping...');
+        }
     }
 });
-
-bot.Dispatcher.on("VOICE_CONNECTED", e => {
-    app.getNextSong(db)
-        .then(function(song) {
-            if (typeof song !== "undefined") {
-                var info = bot.VoiceConnections[0];
-                if (!info) return console.log("Voice not connected");
-                playSongBot(info, song);
-            }
-        })
-});
-
-// bot.Dispatcher.onAny(function(type, e) {
-//     var ignore = [
-//         "READY",
-//         "GATEWAY_READY",
-//         "ANY_GATEWAY_READY",
-//         "GATEWAY_DISPATCH",
-//         "PRESENCE_UPDATE",
-//         "TYPING_START",
-//     ];
-//     if(ignore.find(t => (t == type || t == e.type))) {
-//         return console.log("<" + type + ">");
-//     }
-
-//     console.log("\nevent " + type);
-//     return console.log("args " + JSON.stringify(e));
-// });
 
 http.listen(3000, function () {
     console.log('Example app listening on port 3000!');

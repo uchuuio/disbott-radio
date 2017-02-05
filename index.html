@@ -111,41 +111,59 @@
         }
 
         function addSongToList(song) {
-            var songHtml = `
-                <div class="box song" data-song="${song._id}">
-                    <article class="media">
-                        <div class="media-left">
-                            <figure class="image is-128x128">
-                                <a href="${song.url}" title="${song.title}" target="_blank">
-                                    <img src="${song.thumbnailUrl}" alt="${song.title}">
-                                </a>
-                            </figure>
-                        </div>
-                        <div class="media-content">
-                            <div class="content">
-                                <p>
-                                    <strong>${song.title}</strong> <small>${song.owner}</small>
-                                    <br>
-                                    <span class="description">${song.description}</span>
-                                </p>
+            if (song.medium === 'youtube') {
+                var songHtml = `
+                    <div class="box song" data-song="${song._id}">
+                        <article class="media">
+                            <div class="media-left">
+                                <figure class="image is-128x128">
+                                    <a href="${song.url}" title="${song.title}" target="_blank">
+                                        <img src="${song.thumbnailUrl}" alt="${song.title}">
+                                    </a>
+                                </figure>
                             </div>
-                            <nav class="level">
-                                <div class="level-left">
-                                <p class="level-item" title="published on..">
-                                    <span class="icon is-small"><i class="fa fa-calendar-o"></i> ${song.datePublished}</span>
-                                </p>
-                                <p class="level-item" title="lasts for...">
-                                    <span class="icon is-small"><i class="fa fa-clock-o"></i> ${song.prettyDuration}</span>
-                                </p>
-                                <p class="level-item" title="been viewed...">
-                                    <span class="icon is-small"><i class="fa fa-eye"></i> ${song.views}</span>
-                                </p>
+                            <div class="media-content">
+                                <div class="content">
+                                    <p>
+                                        <strong>${song.title}</strong> <small>${song.owner}</small>
+                                        <br>
+                                        <span class="description">${song.description}</span>
+                                    </p>
                                 </div>
-                            </nav>
-                        </div>
-                    </article>
-                </div>
-            `;
+                                <nav class="level">
+                                    <div class="level-left">
+                                        <p class="level-item" title="lasts for...">
+                                            <span class="icon is-small"><i class="fa fa-clock-o"></i> ${song.prettyDuration}</span>
+                                        </p>
+                                        <p class="level-item" title="been viewed...">
+                                            <span class="icon is-small"><i class="fa fa-eye"></i> ${song.views}</span>
+                                        </p>
+                                    </div>
+                                </nav>
+                            </div>
+                        </article>
+                    </div>
+                `;
+            } else if (song.medium === 'local') {
+                var songHtml = `
+                    <div class="box song" data-song="${song._id}">
+                        <article class="media">
+                            <div class="media-content">
+                                <div class="content">
+                                    <p>
+                                        <strong>${song.title}</strong> <small>${song.owner}</small>
+                                        <br>
+                                        <span class="album">Album: ${song.album}</span>
+                                        <br>
+                                        <br>
+                                        <a href="${song.url}" title="Stream it">Stream</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                `;
+            }
             $('#playlist').append(songHtml);
         }
 
