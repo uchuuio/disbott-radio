@@ -105,6 +105,9 @@ bot.connect({ token: process.env.DISCORD_TOKEN });
 bot.Dispatcher.on("GATEWAY_READY", e => {
     console.log("Connected as: " + bot.User.username);
 
+    // WipeDB
+    db.remove({}, { multi: true }, (err, numRemoved) => {});
+
     // Join Radio
     bot.Guilds.forEach(function(guild) {
         channel = guild.voiceChannels.find(c => c.name == process.env.RADIO_VOICE_CHANNEL);
