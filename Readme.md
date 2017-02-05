@@ -1,6 +1,6 @@
 # Disbott Radio
 
-## A quick MVP for adding a radio (Youtube Streamer) to your discord server.
+## A quick MVP for adding a radio (Youtube/LocalFile Streamer) to your discord server.
 
 ### Setup
 
@@ -26,10 +26,9 @@ To stop the bot from playing use `@botname stop`
 
 ### Future Plans
 
-* Integrate more sound sources (Local Files, Soundcloud, etc.)
-* Skip songs
+* Integrate more sound sources (Soundcloud, etc.)
 * Integrate within [Disbott](https://github.com/uchuuio/disbott)
 
 ### Contributing
 
-This was a quick days work by tomo, expect roughness, though as always glad for any assistance.
+This was a quick couple of days work by tomo, expect roughness, though as always glad for any assistance.
