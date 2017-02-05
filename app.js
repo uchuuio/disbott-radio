@@ -1,9 +1,16 @@
-var moment = require('moment');
+const fs = require('fs');
+
+const moment = require('moment');
 require("moment-duration-format");
 
-var getYouTubeID = require('get-youtube-id');
-var fetchVideoInfo = require('youtube-info');
-var youtubeStream = require('youtube-audio-stream');
+const getYouTubeID = require('get-youtube-id');
+const fetchVideoInfo = require('youtube-info');
+const youtubeStream = require('youtube-audio-stream');
+
+function getRandLocalSong() {
+    const files = fs.readdirSync('./songs/');
+    const chosenSong = files[Math.floor(Math.random() * files.length)];
+}
 
 exports.addUrl = function (url, db, io, bot) {
     return new Promise(function(resolve, reject) {
@@ -52,6 +59,11 @@ exports.getNextSong = function (db) {
     return new Promise(function(resolve, reject) {
         db.find({}, function (err, songs) {
             var nextSong = songs.shift();
+            console.log(nextSong);
+            if (typeof nextSong === "undefined") {
+                // Get a random song from local files
+                nextSong = getRandLocalSong();
+            }
             resolve(nextSong);
         });
     })
