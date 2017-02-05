@@ -11,14 +11,12 @@ function wipeDB() {
 }
 
 test.serial('Video Details is Correctly Fetched', t => {
-    t.plan(8);
+    t.plan(6);
     wipeDB();
     return app.addUrl(ytVideoUrl, db).then(song => {
         t.is(song.title, 'do re mi');
         t.is(song.owner, 'bill wurtz');
-        t.is(song.thumbnailUrl, 'https://i.ytimg.com/vi/4q1Zs3vbX8M/maxresdefault.jpg');
-        t.is(song.datePublished, '2016-01-06');
-        t.is(song.duration, 7);
+        t.is(song.thumbnailUrl, 'https://i.ytimg.com/vi/4q1Zs3vbX8M/default.jpg');
         t.is(song.prettyDuration, '07');
         t.is(song.url, 'https://www.youtube.com/watch?v=4q1Zs3vbX8M');
         t.is(song.medium, 'youtube');
