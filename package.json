@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "deploy": "now --docker; now alias"
+    "deploy": "now --docker; now alias",
+    "test": "ava --verbose"
   },
   "now": {
     "alias": "radio.uchuu.io"
@@ -29,5 +30,8 @@
     "youtube-audio-stream": "0.0.32",
     "youtube-info": "^1.1.1",
     "ytdl-core": "^0.7.24"
+  },
+  "devDependencies": {
+    "ava": "^0.17.0"
   }
 }

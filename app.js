@@ -12,7 +12,7 @@ function getRandLocalSong() {
     const chosenSong = files[Math.floor(Math.random() * files.length)];
 }
 
-exports.addUrl = function (url, db, io, bot) {
+exports.addUrl = function (url, db) {
     return new Promise(function(resolve, reject) {
         if (url.includes('youtube') || url.includes('youtu.be')) {
             var videoId = getYouTubeID(url);
@@ -32,15 +32,6 @@ exports.addUrl = function (url, db, io, bot) {
                 }
                 db.insert(song, function(err, song) {
                     if (err) { throw err; }
-
-                    // Send song to website & bot
-                    io.emit('addedSong', song);
-
-                    bot.Guilds.forEach(function(guild) {
-                        channel = guild.textChannels.find(c => c.name == "radio");
-                        channel.sendMessage(song.title + ' has been queued');
-                    })
-
                     resolve(song);
                 })
             });

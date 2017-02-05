@@ -83,8 +83,16 @@ io.on('connection', function(socket) {
     });
 
     socket.on('requestSong', function(url) {
-        app.addUrl(url, db, io, bot)
+        app.addUrl(url, db)
             .then(function(song) {
+                // Send song to website & bot
+                io.emit('addedSong', song);
+
+                bot.Guilds.forEach(function(guild) {
+                    channel = guild.textChannels.find(c => c.name == "radio");
+                    channel.sendMessage(song.title + ' has been queued');
+                });
+
                 db.find({}, function (err, songs) {
                     if (songs.length <= 1 || !isPlaying) {
                         var voiceChannels = bot.VoiceConnections;
@@ -118,8 +126,16 @@ bot.Dispatcher.on("MESSAGE_CREATE", e => {
         var command = splitMessage[1];
         var url = splitMessage[2];
         if (command == "request" || command == "play") {
-            app.addUrl(url, db, io, bot)
+            app.addUrl(url, db)
                 .then(function(song) {
+                    // Send song to website & bot
+                    io.emit('addedSong', song);
+
+                    bot.Guilds.forEach(function(guild) {
+                        channel = guild.textChannels.find(c => c.name == "radio");
+                        channel.sendMessage(song.title + ' has been queued');
+                    });
+
                     db.find({}, function (err, songs) {
                         if (songs.length <= 1 || !isPlaying) {
                             var info = bot.VoiceConnections[0];
