@@ -85,8 +85,8 @@ io.on('connection', function(socket) {
                 io.emit('addedSong', song);
 
                 bot.Guilds.forEach(function(guild) {
-                    channel = guild.textChannels.find(c => c.name == "radio");
-                    channel.sendMessage(song.title + ' has been queued');
+                    channel = guild.textChannels.find(c => c.name == process.env.RADIO_TEXT_CHANNEL);
+                    channel.sendMessage('A webuser has queued ' + song.title);
                 });
 
                 db.find({}, function (err, songs) {
@@ -145,8 +145,9 @@ bot.Dispatcher.on("MESSAGE_CREATE", e => {
                     io.emit('addedSong', song);
 
                     bot.Guilds.forEach(function(guild) {
+                        var username = e.message.author.username;
                         channel = guild.textChannels.find(c => c.name == process.env.RADIO_TEXT_CHANNEL);
-                        channel.sendMessage(song.title + ' has been queued');
+                        channel.sendMessage(username + ' has queued' + song.title);
                     });
 
                     db.find({}, function (err, songs) {
