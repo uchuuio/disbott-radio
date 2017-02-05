@@ -13,22 +13,37 @@ var ytdl = require('ytdl-core');
 
 function getRandLocalSong(db) {
     return new Promise(function(resolve, reject) {
-        const files = fs.readdirSync(process.env.SONGS_FOLDER);
+        let files = fs.readdirSync(process.env.SONGS_FOLDER);
+        files = files.filter(function(item) { 
+            return item != '.DS_Store';
+        });
+
         if (files.length > 0) {
             const chosenSong = files[Math.floor(Math.random() * files.length)];
             mm(fs.createReadStream(process.env.SONGS_FOLDER + chosenSong), function (err, metadata) {
                 if (err) throw err;
-                const duration = parseInt(metadata.duration);
-                const prettyDuration = moment.duration(duration, 'seconds').format('mm:ss');
-                const song = {
-                    title: metadata.title,
-                    album: metadata.album,
-                    owner: metadata.artist[0],
-                    prettyDuration: prettyDuration,
-                    url: process.env.WEBSITE + '/songs/' + chosenSong,
-                    audioUrl: process.env.SONGS_FOLDER + chosenSong,
-                    medium: 'local'
-                };
+                let song = {};
+                if (chosenSong === 'bgm.mp3') {
+                    song = {
+                        title: 'BGM',
+                        owner: 'Disbott',
+                        url: process.env.WEBSITE + '/songs/' + chosenSong,
+                        audioUrl: process.env.SONGS_FOLDER + chosenSong,
+                        medium: 'local'
+                    };
+                } else {
+                    const duration = parseInt(metadata.duration);
+                    const prettyDuration = moment.duration(duration, 'seconds').format('mm:ss');
+                    song = {
+                        title: metadata.title,
+                        album: metadata.album,
+                        owner: metadata.artist[0],
+                        prettyDuration: prettyDuration,
+                        url: process.env.WEBSITE + '/songs/' + chosenSong,
+                        audioUrl: process.env.SONGS_FOLDER + chosenSong,
+                        medium: 'local'
+                    };
+                }
                 db.insert(song, function(err, song) {
                     if (err) { throw err; }
                     resolve(song);
