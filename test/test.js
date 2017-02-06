@@ -2,7 +2,7 @@ import test from 'ava';
 
 const Datastore = require('nedb');
 const db = new Datastore();
-import app from './app.js';
+import app from './../app.js';
 
 const ytVideoUrl = 'https://www.youtube.com/watch?v=4q1Zs3vbX8M';
 
