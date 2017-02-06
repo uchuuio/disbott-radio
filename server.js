@@ -213,6 +213,11 @@ bot.Dispatcher.on("MESSAGE_CREATE", e => {
             app.stopPlaying(bot);
             e.message.channel.sendMessage('Stopping...');
         }
+
+        if (command == "kys") {
+            app.stopPlaying(bot);
+            bot.disconnect();
+        }
     }
 });
 
