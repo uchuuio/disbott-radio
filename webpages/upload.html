@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <title>discord radio</title>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.3.1/css/bulma.min.css" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+        <style>
+            .notification {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 10;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="notification is-success" style="display: none;">
+            <button class="delete" onclick="hideNotification()"></button>
+        </div>
+
+        <div class="container">
+            <form method="POST" action="/upload" class="form" enctype="multipart/form-data">
+                <div class="content">
+                    <h1 class="title is-1">Upload songs</h1>
+                </div>
+                <p class="control">
+                    <input name="songs[]" type="file" multiple>
+                </p>
+                <p class="control">
+                    <button class="button is-primary" type="submit">Submit</button>
+                </p>
+            </form>
+        </div>
+    </body>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script>
+        var socket = io();
+        function hideNotification() {
+            $('.notification').fadeOut();
+            $('.notification').html('<button class="delete" onclick="hideNotification()"></button>');
+        }
+
+        function showNotification(message) {
+            var notification = $('.notification.is-success');
+            notification.append(message);
+            notification.fadeIn('slow');
+            setTimeout(function() {
+                hideNotification();
+            }, 3000);
+        }
+
+        socket.on('uploadedSongs', function(count) {
+            count = parseInt(count);
+            if (count) {
+                var message = 'Uploaded ' + count + ' song to the radio';
+                if (count > 1) {
+                    message = 'Uploaded ' + count + ' songs to the radio';
+                }
+                showNotification(message);
+            }
+        });
+    </script>
+</html>

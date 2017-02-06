@@ -12,9 +12,23 @@ var db = new Datastore({ filename: './db/songs.db', autoload: true });
 
 var express = require('express');
 var server = express();
+
 var bodyParser = require('body-parser');
-server.use('/songs', express.static('./songs/'));
 server.use(bodyParser.urlencoded({ extended: true }));
+
+var multer  = require('multer');
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'songs/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname)
+    }
+})
+var upload = multer({ storage: storage });
+
+server.use('/songs', express.static('./songs/'));
+
 var http = require('http').Server(server);
 var io = require('socket.io')(http);
 
@@ -79,6 +93,15 @@ server.get('/', function(req, res) {
     res.sendFile(__dirname + '/webpages/index.html');
 });
 
+server.get('/upload', function(req, res) {
+    res.sendFile(__dirname + '/webpages/upload.html');
+});
+
+server.post('/upload', upload.array('songs[]'), function(req, res) {
+    server.set('uploadedSongs', req.files.length);
+    res.redirect('/upload');
+});
+
 server.get('/setup', function(req, res) {
     res.sendFile(__dirname + '/webpages/setup.html');
 });
@@ -92,13 +115,16 @@ server.post('/setup', function(req, res) {
         bot.connect({ token: process.env.DISCORD_TOKEN });
         res.redirect('/');
     }, 1000);
-})
+});
 
 io.on('connection', function(socket) {
     db.find({}, function (err, songs) {
         songs.slice(0, 10);
         io.emit('joinedSongs', songs);
     });
+
+    io.emit('uploadedSongs', server.get('uploadedSongs'));
+    server.set('uploadedSongs', false);
 
     socket.on('requestSong', function(url) {
         app.addUrl(url, db)
