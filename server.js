@@ -147,17 +147,49 @@ bot.Dispatcher.on("MESSAGE_CREATE", e => {
         var command = splitMessage[1];
         var url = splitMessage[2];
 
-        if (command == "start") {
-            db.remove({}, { multi: true }, function (err, numRemoved) {
-                app.getNextSong(db)
-                    .then(function(song) {
-                        if (typeof song !== "undefined") {
-                            var voiceChannels = bot.VoiceConnections;
-                            if (!voiceChannels[0]) return console.log("Voice not connected");
-                            playSongBot(voiceChannels, song);
-                        }
+        if (e.message.member.roles[0].permissions.General.ADMINISTRATOR) {
+            if (command == "start") {
+                db.remove({}, { multi: true }, function (err, numRemoved) {
+                    app.getNextSong(db)
+                        .then(function(song) {
+                            if (typeof song !== "undefined") {
+                                var voiceChannels = bot.VoiceConnections;
+                                if (!voiceChannels[0]) return console.log("Voice not connected");
+                                playSongBot(voiceChannels, song);
+                            }
+                        });
+                });
+            }
+
+            if (command == "skip") {
+                // Stop Current Song and go to next
+                app.stopPlaying(bot);
+                app.removeCurrentSong(db, currentSong._id)
+                    .then(function(_id) {
+                        io.emit('removeSong', _id);
+
+                        app.getNextSong(db)
+                            .then(function(song) {
+                                if (typeof song !== "undefined") {
+                                    io.emit('addedSong', song);
+                                    var voiceChannels = bot.VoiceConnections;
+                                    if (!voiceChannels[0]) return console.log("Voice not connected");
+                                    playSongBot(voiceChannels, song);
+                                }
+                            });
                     });
-            });
+            }
+
+            if (command == "stop") {
+                app.stopPlaying(bot);
+                e.message.channel.sendMessage('Stopping...');
+            }
+
+            if (command == "kys") {
+                app.stopPlaying(bot);
+                bot.disconnect();
+                process.exit(0);
+            }
         }
 
         if (command == "request" || command == "play") {
@@ -186,37 +218,8 @@ bot.Dispatcher.on("MESSAGE_CREATE", e => {
             e.message.channel.sendMessage('**Currently Playing:** ' + currentSong.title + ' -- ' + currentSong.owner);
         }
 
-        if (command == "skip") {
-            // Stop Current Song and go to next
-            app.stopPlaying(bot);
-            app.removeCurrentSong(db, currentSong._id)
-                .then(function(_id) {
-                    io.emit('removeSong', _id);
-
-                    app.getNextSong(db)
-                        .then(function(song) {
-                            if (typeof song !== "undefined") {
-                                io.emit('addedSong', song);
-                                var voiceChannels = bot.VoiceConnections;
-                                if (!voiceChannels[0]) return console.log("Voice not connected");
-                                playSongBot(voiceChannels, song);
-                            }
-                        });
-                });
-        }
-
         if (command == "playlist") {
             e.message.channel.sendMessage('Visit '+process.env.WEBSITE+' to see the full playlist');
-        }
-
-        if (command == "stop") {
-            app.stopPlaying(bot);
-            e.message.channel.sendMessage('Stopping...');
-        }
-
-        if (command == "kys") {
-            app.stopPlaying(bot);
-            bot.disconnect();
         }
     }
 });
