@@ -76,11 +76,11 @@ function playSongBot(voiceChannels, song) {
 }
 
 server.get('/', function(req, res) {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/webpages/index.html');
 });
 
 server.get('/setup', function(req, res) {
-    res.sendFile(__dirname + '/setup.html');
+    res.sendFile(__dirname + '/webpages/setup.html');
 });
 
 server.post('/setup', function(req, res) {
